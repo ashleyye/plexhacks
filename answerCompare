@@ -1,0 +1,36 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class answerCompare{
+
+    public static void main(String[] args){
+        char [] key = new char[30];
+        char [] answer = new char[30];
+        int correctCount = 0;
+        for (int i = 0; i < 30; i++){
+            key[i] = 'n';
+            answer[i] = 'n';
+        }
+
+        //read in input from opencv
+
+        /* sample input
+
+        ArrayList<Character> exKey = new ArrayList<>(Arrays.asList('a', 'd', 'b', 'c', 'c', 'd', 'e', 'b', 'a', 'c', 'd','d','d','a','a','c','e','a','a','e'));
+        ArrayList<Character> exAnswer = new ArrayList<>(Arrays.asList('c', 'b', 'e', 'd', 'a', 'a', 'b', 'n', 'e', 'e', 'c', 'd','a','b','b','b','c','c','e','c','a','b'));
+
+        for (int i = 0; i < exKey.size(); i++){
+            key[i] = exKey.get(i);
+            answer[i] = exAnswer.get(i);
+        }
+        */
+
+
+        for (int i = 0; i < key.length; i++){
+            if (key[i] != 'n' && answer[i] != 'n' && key[i] == answer[i])
+                correctCount++;
+        }
+
+        System.out.println("Final score: " + correctCount + "/" + key.length);
+    }
+}

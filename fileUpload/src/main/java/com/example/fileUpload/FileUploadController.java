@@ -42,6 +42,8 @@ public class FileUploadController {
         Resource file = storageService.loadAsResource(filename);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+
+
     }
 
 //    @PostMapping("/listUploadedFiles")
@@ -77,10 +79,11 @@ public class FileUploadController {
     }
 
     @PostMapping("/submit")
-    public String submitPost(@RequestParam("file") MultipartFile file,
+    public String submitPost(@RequestParam("file") MultipartFile[] files,
                          RedirectAttributes redirectAttributes) {
-        storageService.store(file);
-
+        for (MultipartFile file: files) {
+            storageService.store(file);
+        }
         redirectAttributes.addFlashAttribute("message",
                 "Upload Successful");
         return "submit";
