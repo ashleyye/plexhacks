@@ -24,5 +24,6 @@ public class FileUploadApplication {
 			storageService.deleteAll();
 			storageService.init();
 		};
+
 	}
 }
