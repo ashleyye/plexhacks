@@ -83,7 +83,7 @@ public class FileUploadController {
 
         redirectAttributes.addFlashAttribute("message",
                 "Upload Successful");
-        return "redirect:/uploadForm";
+        return "submit";
         //backend
     }
 
