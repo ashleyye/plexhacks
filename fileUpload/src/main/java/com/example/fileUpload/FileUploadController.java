@@ -33,16 +33,7 @@ public class FileUploadController {
         return "equiscanHome";
     }
 
-    @GetMapping("/listUploadedFiles")
-    public String listUploadedFiles(Model model) throws IOException {
 
-        model.addAttribute("files", storageService.loadAll().map(
-                path -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
-                        "serveFile", path.getFileName().toString()).build().toUri().toString())
-                .collect(Collectors.toList()));
-
-        return "uploadForm";
-    }
 
     @GetMapping("/files/{filename:.+}")
     @ResponseBody
@@ -53,16 +44,16 @@ public class FileUploadController {
                 "attachment; filename=\"" + file.getFilename() + "\"").body(file);
     }
 
-    @PostMapping("/listUploadedFiles")
-    public String handleFileUpload(@RequestParam("file") MultipartFile file,
-                                   RedirectAttributes redirectAttributes) {
-
-        storageService.store(file);
-        redirectAttributes.addFlashAttribute("message",
-                "You successfully uploaded " + file.getOriginalFilename() + "!");
-
-        return "redirect:/";
-    }
+//    @PostMapping("/listUploadedFiles")
+//    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+//                                   RedirectAttributes redirectAttributes) {
+//
+//        storageService.store(file);
+//        redirectAttributes.addFlashAttribute("message",
+//                "You successfully uploaded " + file.getOriginalFilename() + "!");
+//
+//        return "redirect:/";
+//    }
 
     @ExceptionHandler(StorageFileNotFoundException.class)
     public ResponseEntity<?> handleStorageFileNotFound(StorageFileNotFoundException exc) {
@@ -74,16 +65,27 @@ public class FileUploadController {
         return "uploadForm";
     }
 
+    @GetMapping("/submit")
+    public String submit(Model model) throws IOException {
+
+        model.addAttribute("files", storageService.loadAll().map(
+                path -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
+                        "serveFile", path.getFileName().toString()).build().toUri().toString())
+                .collect(Collectors.toList()));
+
+        return "uploadForm";
+    }
+
     @PostMapping("/submit")
-    public String submit(@RequestParam("file") MultipartFile file,
+    public String submitPost(@RequestParam("file") MultipartFile file,
                          RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("message", "Upload Successful.");
+        storageService.store(file);
+
+        redirectAttributes.addFlashAttribute("message",
+                "Upload Successful");
         return "redirect:/uploadForm";
         //backend
     }
-
-
-
 
     @GetMapping("/home")
     public String home() {

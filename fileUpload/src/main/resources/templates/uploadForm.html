@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
 <title>Equiscan</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,13 +15,19 @@ label {
    cursor: pointer;
    /* Style as you please, it will become the visible UI component. */
 }
+table {
 
+    margin-left: auto;
+
+    margin-right: auto;
+
+}
 #upload-key {
    opacity: 0;
    position: absolute;
    z-index: -1;
 }
-    
+
 #upload-answers {
    opacity: 0;
    position: absolute;
@@ -57,14 +63,28 @@ label {
     </ol>
     </div>
 
-    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-key">upload key</label> <input type="file" name="photo" id="upload-key" /></button>
-    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-answers">upload answers</label> <input type="file" name="photo" id="upload-answers" multiple/></button>
-    <form method="POST" enctype="multipart/form-data" action="/submit">
-        <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-submit">submit</label> <input type="submit" value="Upload" id="upload-submit" /></button>
-    </form>
     <div th:if="${message}">
         <h2 th:text="${message}"/>
     </div>
+<!--    <div>-->
+<!--    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-key">upload key</label> <input type="file" name="photo" id="upload-key" /></button>-->
+<!--    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-answers">upload answers</label> <input type="file" name="photo" id="upload-answers" multiple/></button>-->
+
+<!--    <form method="POST" enctype="multipart/form-data" action="/submit">-->
+<!--        <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-submit">submit</label> <input type="image" alt = "Submit" value="Upload" id="upload-submit" /></button>-->
+<!--    </form>-->
+<!--    </div>-->
+    <div>
+        <form method="POST" enctype="multipart/form-data" action="/submit">
+            <table>
+                <tr><td><button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-key">upload key</label> <input type="file" name="file" id="upload-key" /></button></td></tr>
+                <tr><td><button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-answers">upload answers</label> <input type="file" name="file" id="upload-answers" multiple required/></button></td></tr>
+                <tr><td><button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-submit">submit</label> <input type="image" alt = "Submit" value="Upload" id="upload-submit" /></button></td></tr>
+            </table>
+        </form>
+    </div>
+
+
 
 
     <div th:each="file : ${files}">
