@@ -32,6 +32,5 @@ public class answerCompare{
         }
 
         System.out.println("Final score: " + correctCount + "/" + key.length);
-
     }
 }
