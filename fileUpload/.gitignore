@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -32,6 +33,9 @@ build/
 
 ### VS Code ###
 .vscode/
+=======
+/target/
+>>>>>>> Stashed changes
 =======
 /target/
 >>>>>>> Stashed changes
