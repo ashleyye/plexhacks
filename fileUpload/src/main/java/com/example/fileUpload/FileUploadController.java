@@ -74,6 +74,15 @@ public class FileUploadController {
         return "uploadForm";
     }
 
+    @PostMapping("/submit")
+    public String submit(@RequestParam("file") MultipartFile file,
+                         RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("message", "Upload Successful.");
+        return "redirect:/uploadForm";
+        //backend
+    }
+
+
 
 
     @GetMapping("/home")
