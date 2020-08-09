@@ -24,6 +24,7 @@ package com.example.fileUpload;
 
         import com.example.fileUpload.storage.StorageFileNotFoundException;
         import com.example.fileUpload.storage.StorageService;
+        import tech.tablesaw.api.DoubleColumn;
         import tech.tablesaw.api.IntColumn;
         import tech.tablesaw.api.StringColumn;
         import tech.tablesaw.api.Table;
@@ -254,18 +255,21 @@ public class FileUploadController {
 //                System.out.print(answers[i]+" ");
 //            }
 
-            int[] correctArray = new int[30];
+            double[] correctArray = new double[31];
             if (fileNum == 0) {
                 answerTable.addColumns(StringColumn.create("Answer Key", answers));
                 answerArray = Arrays.copyOf(answers, 30);
             } else {
-                answerTable.addColumns(StringColumn.create("Student" + Integer.toString(fileNum), answers));
+                double numCorrect = 0;
+                answerTable.addColumns(StringColumn.create("Student" + Double.toString(fileNum), answers));
                 for (int k = 0; k < 30; k++){
                     if (answerArray[k].equals(answers[k])){
                         correctArray[k] = 1;
+                        numCorrect++;
                     }
                 }
-                studentCorrectTable.addColumns(IntColumn.create("Student" + Integer.toString(fileNum), correctArray));
+                correctArray[30] = numCorrect / 30;
+                studentCorrectTable.addColumns(DoubleColumn.create("Student" + Double.toString(fileNum), correctArray));
             }
             fileNum++;
 
@@ -283,14 +287,14 @@ public class FileUploadController {
         System.out.println(answerTable.first(30));
 
         System.out.println(studentCorrectTable.first(30));
-        Table totalCorrect = Table.create("Total Correct");
-        for (int i = 0; i < studentCorrectTable.columnCount(); i++){
-            int[] sum = new int[1];
-            for (int j = 0; j < studentCorrectTable.rowCount(); j++){
-                sum[0] = sum[0] + ((IntColumn) studentCorrectTable.column(i)).get(j);
-            }
-            totalCorrect.addColumns(IntColumn.create("Sum" + i, sum));
-        }
+//        Table totalCorrect = Table.create("Total Correct");
+//        for (int i = 0; i < studentCorrectTable.columnCount(); i++){
+//            int[] sum = new int[1];
+//            for (int j = 0; j < studentCorrectTable.rowCount(); j++){
+//                sum[0] = sum[0] + ((IntColumn) studentCorrectTable.column(i)).get(j);
+//            }
+//            totalCorrect.addColumns(IntColumn.create("Sum" + i, sum));
+//        }
 
         answerTable.write().csv("answers.csv");
         studentCorrectTable.write().csv("studentCorrect.csv");
