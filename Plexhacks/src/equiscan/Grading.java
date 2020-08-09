@@ -20,7 +20,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class Grading {
 	public static void run(String[] args){
-		String defaultFile = "shrestha2.jpeg";
+		String defaultFile = "lucinda.jpg";
 		String filename = ((args.length > 0) ? args[0] : defaultFile);
 		Mat src = Imgcodecs.imread(filename);
 		//check if loaded properly
@@ -34,7 +34,7 @@ public class Grading {
 		Mat gray = new Mat(src.rows(), src.cols(), src.type());
 		Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
 		Mat binary = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0));
-		Imgproc.threshold(gray, binary, 135, 255, Imgproc.THRESH_BINARY_INV);
+		Imgproc.threshold(gray, binary, 130, 255, Imgproc.THRESH_BINARY_INV);
 
 		//find contours
 		List<MatOfPoint> cntrs = new ArrayList<>();
@@ -54,13 +54,12 @@ public class Grading {
 			boundRect[i] = Imgproc.boundingRect(new MatOfPoint(cntrsPoly[i].toArray())); //create bounding rectangle
 
 			float ar = boundRect[i].width/(float)boundRect[i].height;
-			if(boundRect[i].width > 60 && boundRect[i].height > 60 && ar <= 1.2 && ar >= 0.8){ //checks if are big enough and aspect ratio is close to 1
+			if(boundRect[i].width > 60 && boundRect[i].height > 60 && ar <= 1.2 && ar >= 0.8 && boundRect[i].tl().y > 300){ //checks if are big enough and aspect ratio is close to 1, not header
 				fixedBoundRect.add(boundRect[i]);
 				fixedCntrsPoly.add(cntrsPoly[i]);
 				fixedCntrs.add(cntrs.get(i));
 			}
 		}
-
 
 		Mat cannyOutput = new Mat();
 		Imgproc.Canny(gray, cannyOutput, 100, 100 * 2);
@@ -120,7 +119,7 @@ public class Grading {
 					Mat mask = binary.submat(rect);
 					int total = Core.countNonZero(mask);
 					double pixel = total/Imgproc.contourArea(tempCntrs.get(j*5+k))*100;
-					if(pixel > max && pixel > 50){
+					if(pixel > max && pixel > 30){
 						max = pixel;
 						maxPos = k;
 					}
@@ -155,11 +154,15 @@ public class Grading {
 			System.out.print(answers[i]+" ");
 		}
 
+	
 	}
+	
+	
 
 	public static void main(String[] args) {
 		// Load the native library.
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		run(args);
+		
 	}
 }
