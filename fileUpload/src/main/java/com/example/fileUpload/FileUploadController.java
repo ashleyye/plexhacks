@@ -3,10 +3,7 @@ package com.example.fileUpload;
         import java.io.File;
         import java.io.FileOutputStream;
         import java.io.IOException;
-        import java.util.ArrayList;
-        import java.util.Collections;
-        import java.util.Comparator;
-        import java.util.List;
+        import java.util.*;
         import java.util.stream.Collectors;
 
         import org.opencv.core.*;
@@ -27,6 +24,10 @@ package com.example.fileUpload;
 
         import com.example.fileUpload.storage.StorageFileNotFoundException;
         import com.example.fileUpload.storage.StorageService;
+        import tech.tablesaw.api.IntColumn;
+        import tech.tablesaw.api.StringColumn;
+        import tech.tablesaw.api.Table;
+        import tech.tablesaw.selection.Selection;
 
 @Controller
 public class FileUploadController {
@@ -93,6 +94,16 @@ public class FileUploadController {
 
     @PostMapping("/submit")
     public String submitPost(@RequestParam("file") MultipartFile[] multipleFiles) throws IOException {
+        System.out.println("PreTest0");
+
+        int fileNum = 0;
+        System.out.println("PreTest1");
+
+        Table answerTable = Table.create("Answers");
+        System.out.println("PreTest2");
+        String[] answerArray = new String[30];
+        Table studentCorrectTable = Table.create("Correct");
+
         for (MultipartFile file: multipleFiles) {
             storageService.store(file);
             File convFile = new File(file.getOriginalFilename());
@@ -105,6 +116,8 @@ public class FileUploadController {
             //System.out.println(convFile.getAbsolutePath());
             Mat src = Imgcodecs.imread(convFile.getAbsolutePath());
             //check if loaded properly
+            System.out.println("Test1");
+
             if(src.empty()) {
                 System.out.println("Error opening image.");
                 System.out.println("Program Arguments: [image_name -- default "  + defaultFile +"] \n");
@@ -117,7 +130,7 @@ public class FileUploadController {
             Mat gray = new Mat(src.rows(), src.cols(), src.type());
             Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
             Mat binary = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0));
-            Imgproc.threshold(gray, binary, 150, 255, Imgproc.THRESH_BINARY_INV);
+            Imgproc.threshold(gray, binary, 130, 255, Imgproc.THRESH_BINARY_INV);
 
             //find contours
             List<MatOfPoint> cntrs = new ArrayList<>();
@@ -144,6 +157,7 @@ public class FileUploadController {
                     fixedCntrs.add(cntrs.get(i));
                 }
             }
+
             Mat cannyOutput = new Mat();
             Imgproc.Canny(gray, cannyOutput, 100, 100 * 2);
 
@@ -173,7 +187,10 @@ public class FileUploadController {
 
 
             //parse through top/bot sorted list, add to final list
-            char[] answers = new char[30];
+            String[] answers = new String[30];
+            for(int i = 0; i < answers.length; i++){
+                answers[i] = "n";
+            }
             for(int i = 0; i < 15; i++){
                 List<MatOfPoint> tempCntrs = new ArrayList<>();
                 for(int j = 0; j < 10; j++){
@@ -201,28 +218,28 @@ public class FileUploadController {
                         Mat mask = binary.submat(rect);
                         int total = Core.countNonZero(mask);
                         double pixel = total/Imgproc.contourArea(tempCntrs.get(j*5+k))*100;
-                        if(pixel > max){
+                        if(pixel > max && pixel > 40){
                             max = pixel;
                             maxPos = k;
                         }
                     }
 
-                    char val = 'n';
+                    String val = "n";
                     switch(maxPos) {
                         case 0:
-                            val = 'a';
+                            val = "a";
                             break;
                         case 1:
-                            val = 'b';
+                            val = "b";
                             break;
                         case 2:
-                            val = 'c';
+                            val = "c";
                             break;
                         case 3:
-                            val = 'd';
+                            val = "d";
                             break;
                         case 4:
-                            val = 'e';
+                            val = "e";
                             break;
                     }
 
@@ -237,15 +254,28 @@ public class FileUploadController {
 
             }
 
-            for(int i = 0; i < answers.length; i++){
-                System.out.print(answers[i]+" ");
+//            for(int i = 0; i < answers.length; i++){
+//                System.out.print(answers[i]+" ");
+//            }
+            System.out.println("Test2");
+
+            int[] correctArray = new int[30];
+            if (fileNum == 0) {
+                answerTable.addColumns(StringColumn.create("Answer Key", answers));
+                answerArray = Arrays.copyOf(answers, 30);
+            } else {
+                answerTable.addColumns(StringColumn.create("Student" + Integer.toString(fileNum), answers));
+                for (int k = 0; k < 30; k++){
+                    if (answerArray[k].equals(answers[k])){
+                        correctArray[k] = 1;
+                    }
+                }
+                studentCorrectTable.addColumns(IntColumn.create("Student" + Integer.toString(fileNum), correctArray));
             }
+            fileNum++;
 
 
 
-            Imgproc.resize(src, src,  new Size(src.cols()/4, src.rows()/4), 0, 0, Imgproc.INTER_AREA);
-            Imgproc.resize(binary, binary,  new Size(binary.cols()/4, binary.rows()/4), 0, 0, Imgproc.INTER_AREA);
-            Imgproc.resize(drawing, drawing,  new Size(drawing.cols()/4, drawing.rows()/4), 0, 0, Imgproc.INTER_AREA);
 
 //            HighGui.waitKey();
 //
@@ -255,11 +285,13 @@ public class FileUploadController {
 
         }
 
+        System.out.println(answerTable.first(30));
 
-
+        System.out.println(studentCorrectTable.first(30));
         return "submit";
         //backend
     }
+
 
     @GetMapping("/home")
     public String home() {
