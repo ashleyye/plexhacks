@@ -4,6 +4,8 @@ package com.example.fileUpload;
         import java.io.FileOutputStream;
         import java.io.IOException;
         import java.util.ArrayList;
+        import java.util.Collections;
+        import java.util.Comparator;
         import java.util.List;
         import java.util.stream.Collectors;
 
@@ -100,7 +102,7 @@ public class FileUploadController {
             fos.close();
 
             String defaultFile = file.getOriginalFilename();
-            System.out.println(convFile.getAbsolutePath());
+            //System.out.println(convFile.getAbsolutePath());
             Mat src = Imgcodecs.imread(convFile.getAbsolutePath());
             //check if loaded properly
             if(src.empty()) {
@@ -108,45 +110,42 @@ public class FileUploadController {
                 System.out.println("Program Arguments: [image_name -- default "  + defaultFile +"] \n");
                 System.exit(-1);
             }
-            System.out.println("2");
+            //System.out.println("2");
 
+            //create binary image (inverted, b/w, two tone)
             //create binary image (inverted, b/w, two tone)
             Mat gray = new Mat(src.rows(), src.cols(), src.type());
             Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
             Mat binary = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0));
             Imgproc.threshold(gray, binary, 150, 255, Imgproc.THRESH_BINARY_INV);
-            System.out.println("3");
 
+            //find contours
             List<MatOfPoint> cntrs = new ArrayList<>();
             Mat hierarchy = new Mat();
-
-            List<MatOfPoint> boxes = new ArrayList<>();
-
-            System.out.println("4");
-
             Imgproc.findContours(binary, cntrs, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            List<Rect> boxCnt = new ArrayList<>();
+            //sort through contours to find the ones that actually are answer boxes
+            List<MatOfPoint> fixedCntrs = new ArrayList<>();
+            List<Rect> fixedBoundRect = new ArrayList<>();
             List<MatOfPoint2f> fixedCntrsPoly = new ArrayList<>();
 
             Rect[] boundRect = new Rect[cntrs.size()];
             MatOfPoint2f[] cntrsPoly  = new MatOfPoint2f[cntrs.size()];
-            System.out.println("5");
 
             for(int i = 0; i < cntrs.size(); i++){
                 cntrsPoly[i] = new MatOfPoint2f();
                 Imgproc.approxPolyDP(new MatOfPoint2f(cntrs.get(i).toArray()), cntrsPoly[i], 3, true);
-                boundRect[i] = Imgproc.boundingRect(new MatOfPoint(cntrsPoly[i].toArray()));
+                boundRect[i] = Imgproc.boundingRect(new MatOfPoint(cntrsPoly[i].toArray())); //create bounding rectangle
 
                 float ar = boundRect[i].width/(float)boundRect[i].height;
-                if(boundRect[i].width > 60 && boundRect[i].height > 60 && ar <= 1.2 && ar >= 0.8){
-                    boxCnt.add(boundRect[i]);
+                if(boundRect[i].width > 60 && boundRect[i].height > 60 && ar <= 1.2 && ar >= 0.8){ //checks if are big enough and aspect ratio is close to 1
+                    fixedBoundRect.add(boundRect[i]);
                     fixedCntrsPoly.add(cntrsPoly[i]);
+                    fixedCntrs.add(cntrs.get(i));
                 }
             }
             Mat cannyOutput = new Mat();
             Imgproc.Canny(gray, cannyOutput, 100, 100 * 2);
-            System.out.println("6");
 
             Mat drawing = Mat.zeros(cannyOutput.size(), CvType.CV_8UC3);
             List<MatOfPoint> contoursPolyList = new ArrayList<>(fixedCntrsPoly.size());
@@ -154,22 +153,99 @@ public class FileUploadController {
                 contoursPolyList.add(new MatOfPoint(poly.toArray()));
             }
             for (int i = 0; i < fixedCntrsPoly.size(); i++) {
-                Scalar color = new Scalar(0, 255,0);
+                Scalar color = new Scalar(0, 0, 255);
                 Imgproc.drawContours(src, contoursPolyList, i, color);
-                Imgproc.rectangle(src, boxCnt.get(i).tl(), boxCnt.get(i).br(), color, 2);
+                Imgproc.rectangle(src, fixedBoundRect.get(i).tl(), fixedBoundRect.get(i).br(), color, 2); //draws sorted contours
             }
-            System.out.println("7");
 
-            //
-            //		Scalar color = new Scalar(0, 0, 255);
-            //		Imgproc.drawContours(src, cntrs, -1, color, 2, Imgproc.LINE_8, hierarchy, 2, new Point());
+
+
+            //sort Contours, t/b, l/r
+            Collections.sort(fixedCntrs, new Comparator<MatOfPoint>() {
+                @Override
+                public int compare(MatOfPoint o1, MatOfPoint o2) {
+                    Rect r1 = Imgproc.boundingRect(o1);
+                    Rect r2 = Imgproc.boundingRect(o2);
+                    int result = Double.compare(r1.tl().y, r2.tl().y);
+                    return result;
+                }
+            } );
+
+
+            //parse through top/bot sorted list, add to final list
+            char[] answers = new char[30];
+            for(int i = 0; i < 15; i++){
+                List<MatOfPoint> tempCntrs = new ArrayList<>();
+                for(int j = 0; j < 10; j++){
+                    tempCntrs.add(fixedCntrs.get(i*10+j));
+                }
+                Collections.sort(tempCntrs, new Comparator<MatOfPoint>(){
+                    @Override
+                    public int compare(MatOfPoint o1, MatOfPoint o2){
+                        Rect r1 = Imgproc.boundingRect(o1);
+                        Rect r2 = Imgproc.boundingRect(o2);
+                        int result = 0;
+                        double total = r1.tl().y/r2.tl().y;
+                        if (total >= 0.9 && total <= 1.4 ){
+                            result = Double.compare(r1.tl().x, r2.tl().x);
+                        }
+                        return result;
+                    }
+                });
+
+                for(int j = 0; j < 2; j++){
+                    double max = 0;
+                    int maxPos = 0;
+                    for(int k = 0; k < 5; k++){
+                        Rect rect = Imgproc.boundingRect(tempCntrs.get(j*5+k));
+                        Mat mask = binary.submat(rect);
+                        int total = Core.countNonZero(mask);
+                        double pixel = total/Imgproc.contourArea(tempCntrs.get(j*5+k))*100;
+                        if(pixel > max){
+                            max = pixel;
+                            maxPos = k;
+                        }
+                    }
+
+                    char val = 'n';
+                    switch(maxPos) {
+                        case 0:
+                            val = 'a';
+                            break;
+                        case 1:
+                            val = 'b';
+                            break;
+                        case 2:
+                            val = 'c';
+                            break;
+                        case 3:
+                            val = 'd';
+                            break;
+                        case 4:
+                            val = 'e';
+                            break;
+                    }
+
+                    answers[i+j*15] = val;
+
+                }
+                //			for(int k = 0; k < tempCntrs.size(); k++){
+                //				Rect rect = Imgproc.boundingRect(tempCntrs.get(k));
+                //				System.out.println(rect.x + ", "+rect.y);
+                //			}
+                //			System.out.println();
+
+            }
+
+            for(int i = 0; i < answers.length; i++){
+                System.out.print(answers[i]+" ");
+            }
+
+
 
             Imgproc.resize(src, src,  new Size(src.cols()/4, src.rows()/4), 0, 0, Imgproc.INTER_AREA);
             Imgproc.resize(binary, binary,  new Size(binary.cols()/4, binary.rows()/4), 0, 0, Imgproc.INTER_AREA);
             Imgproc.resize(drawing, drawing,  new Size(drawing.cols()/4, drawing.rows()/4), 0, 0, Imgproc.INTER_AREA);
-            System.out.println("8");
-            HighGui.imshow("Source", src);
-            System.out.println("9");
 
 //            HighGui.waitKey();
 //
