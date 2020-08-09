@@ -13,14 +13,14 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
  
 public class BarChartSample extends Application {
 	
-	
-	public static int answersChecked = 5; //hardcoded for now
-    public static String [] questions = new String[answersChecked];
-    public int [] correctAnswers = {3, 5, 2, 3, 5};
+	public static String [] questions = new String[30]; 
+	public static int [] correctAnswers = new int [30];
     
     
     public static void initializingQuestions() {
@@ -49,24 +49,23 @@ public class BarChartSample extends Application {
         XYChart.Series series2 = new XYChart.Series();
         series2.setName("Incorrect");
         for (int i = 0; i < questions.length; i++) {
-        	series2.getData().add(new XYChart.Data(questions[i], answersChecked - correctAnswers[i]));
+        	series2.getData().add(new XYChart.Data(questions[i], questions.length - correctAnswers[i]));
         }
         
-        Scene scene = new Scene(new Group(),800,600);
+        Scene scene = new Scene(new Group(),800,600, Color.WHITE);
         
         bc.getData().addAll(series1, series2);
-
         stage.setTitle("Analytics");
         stage.setScene(scene);
         stage.show();
         ((Group) scene.getRoot()).getChildren().add(bc);
         WritableImage wim = scene.snapshot(null);
  
-        File file = new File("graph.jpg");
+        File file = new File("graph.png");
 
 
         try {
-            ImageIO.write(SwingFXUtils.fromFXImage(wim, null), "jpg", file);
+            ImageIO.write(SwingFXUtils.fromFXImage(wim, null), "PNG", file);
         } catch (Exception s) {
         }
         System.out.println("yeet");
@@ -74,6 +73,10 @@ public class BarChartSample extends Application {
     }
  
     public static void main(String[] args) {
+    	answerCompare answercompare = new answerCompare();
+    	correctAnswers = answercompare.getAnswerStats();
+    	String [] mainQuestions = new String[answercompare.getTotalCount()];
+    	questions = mainQuestions;
     	initializingQuestions();
         launch(args);
     }
