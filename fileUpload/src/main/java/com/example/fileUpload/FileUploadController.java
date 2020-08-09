@@ -27,7 +27,7 @@ package com.example.fileUpload;
         import tech.tablesaw.api.IntColumn;
         import tech.tablesaw.api.StringColumn;
         import tech.tablesaw.api.Table;
-        import tech.tablesaw.selection.Selection;
+
 
 @Controller
 public class FileUploadController {
@@ -94,13 +94,10 @@ public class FileUploadController {
 
     @PostMapping("/submit")
     public String submitPost(@RequestParam("file") MultipartFile[] multipleFiles) throws IOException {
-        System.out.println("PreTest0");
 
         int fileNum = 0;
-        System.out.println("PreTest1");
 
         Table answerTable = Table.create("Answers");
-        System.out.println("PreTest2");
         String[] answerArray = new String[30];
         Table studentCorrectTable = Table.create("Correct");
 
@@ -116,7 +113,6 @@ public class FileUploadController {
             //System.out.println(convFile.getAbsolutePath());
             Mat src = Imgcodecs.imread(convFile.getAbsolutePath());
             //check if loaded properly
-            System.out.println("Test1");
 
             if(src.empty()) {
                 System.out.println("Error opening image.");
@@ -257,7 +253,6 @@ public class FileUploadController {
 //            for(int i = 0; i < answers.length; i++){
 //                System.out.print(answers[i]+" ");
 //            }
-            System.out.println("Test2");
 
             int[] correctArray = new int[30];
             if (fileNum == 0) {
@@ -288,6 +283,18 @@ public class FileUploadController {
         System.out.println(answerTable.first(30));
 
         System.out.println(studentCorrectTable.first(30));
+        Table totalCorrect = Table.create("Total Correct");
+        for (int i = 0; i < studentCorrectTable.columnCount(); i++){
+            int[] sum = new int[1];
+            for (int j = 0; j < studentCorrectTable.rowCount(); j++){
+                sum[0] = sum[0] + ((IntColumn) studentCorrectTable.column(i)).get(j);
+            }
+            totalCorrect.addColumns(IntColumn.create("Sum" + i, sum));
+        }
+
+        answerTable.write().csv("answers.csv");
+        studentCorrectTable.write().csv("studentCorrect.csv");
+
         return "submit";
         //backend
     }
