@@ -63,9 +63,6 @@ table {
     </ol>
     </div>
 
-    <div th:if="${message}">
-        <h2 th:text="${message}"/>
-    </div>
 <!--    <div>-->
 <!--    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-key">upload key</label> <input type="file" name="photo" id="upload-key" /></button>-->
 <!--    <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top"><label for="upload-answers">upload answers</label> <input type="file" name="photo" id="upload-answers" multiple/></button>-->
@@ -86,10 +83,6 @@ table {
 
 
 
-
-    <div th:each="file : ${files}">
-        <a th:href="${file}" th:text="${file}" />
-    </div>
 
 </header>
 

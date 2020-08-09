@@ -34,14 +34,13 @@ public class Grading {
 		Mat gray = new Mat(src.rows(), src.cols(), src.type());
 		Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
 		Mat binary = new Mat(src.rows(), src.cols(), src.type(), new Scalar(0));
-		Imgproc.threshold(gray, binary, 150, 255, Imgproc.THRESH_BINARY_INV);
+		Imgproc.threshold(gray, binary, 135, 255, Imgproc.THRESH_BINARY_INV);
 
 		//find contours
 		List<MatOfPoint> cntrs = new ArrayList<>();
 		Mat hierarchy = new Mat();
 		Imgproc.findContours(binary, cntrs, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-		//sort through contours to find the ones that actually are answer boxes
 		List<MatOfPoint> fixedCntrs = new ArrayList<>();
 		List<Rect> fixedBoundRect = new ArrayList<>();
 		List<MatOfPoint2f> fixedCntrsPoly = new ArrayList<>();
@@ -61,6 +60,8 @@ public class Grading {
 				fixedCntrs.add(cntrs.get(i));
 			}
 		}
+
+
 		Mat cannyOutput = new Mat();
 		Imgproc.Canny(gray, cannyOutput, 100, 100 * 2);
 
@@ -75,8 +76,6 @@ public class Grading {
 			Imgproc.rectangle(src, fixedBoundRect.get(i).tl(), fixedBoundRect.get(i).br(), color, 2); //draws sorted contours
 		}
 
-
-
 		//sort Contours, t/b, l/r
 		Collections.sort(fixedCntrs, new Comparator<MatOfPoint>() {
 			@Override
@@ -88,9 +87,11 @@ public class Grading {
 			}
 		} );
 
-
 		//parse through top/bot sorted list, add to final list
 		char[] answers = new char[30];
+		for(int i = 0; i < answers.length; i++){
+			answers[i] = 'n';
+		}
 		for(int i = 0; i < 15; i++){
 			List<MatOfPoint> tempCntrs = new ArrayList<>();
 			for(int j = 0; j < 10; j++){
@@ -106,24 +107,25 @@ public class Grading {
 					if (total >= 0.9 && total <= 1.4 ){
 						result = Double.compare(r1.tl().x, r2.tl().x);
 					}
+
 					return result;
 				}
 			});
 
 			for(int j = 0; j < 2; j++){
 				double max = 0;
-				int maxPos = 0;
+				int maxPos = 5;
 				for(int k = 0; k < 5; k++){
 					Rect rect = Imgproc.boundingRect(tempCntrs.get(j*5+k));
 					Mat mask = binary.submat(rect);
 					int total = Core.countNonZero(mask);
 					double pixel = total/Imgproc.contourArea(tempCntrs.get(j*5+k))*100;
-					if(pixel > max){
+					if(pixel > max && pixel > 50){
 						max = pixel;
 						maxPos = k;
 					}
 				}
-				
+
 				char val = 'n';
 				switch(maxPos) {
 				case 0:
@@ -142,33 +144,17 @@ public class Grading {
 					val = 'e';
 					break;
 				}
-				
+
 				answers[i+j*15] = val;
 
 			}
-			//			for(int k = 0; k < tempCntrs.size(); k++){
-			//				Rect rect = Imgproc.boundingRect(tempCntrs.get(k));
-			//				System.out.println(rect.x + ", "+rect.y);
-			//			}
-			//			System.out.println();
-	
+
 		}
 
 		for(int i = 0; i < answers.length; i++){
 			System.out.print(answers[i]+" ");
 		}
 
-
-
-		Imgproc.resize(src, src,  new Size(src.cols()/4, src.rows()/4), 0, 0, Imgproc.INTER_AREA);
-		Imgproc.resize(binary, binary,  new Size(binary.cols()/4, binary.rows()/4), 0, 0, Imgproc.INTER_AREA);
-		Imgproc.resize(drawing, drawing,  new Size(drawing.cols()/4, drawing.rows()/4), 0, 0, Imgproc.INTER_AREA);
-
-
-		//show contours
-		//System.out.println(fixedBoundRect.size());
-		HighGui.imshow("Source", src);
-		HighGui.waitKey();		
 	}
 
 	public static void main(String[] args) {
